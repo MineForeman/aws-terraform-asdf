@@ -1,0 +1,114 @@
+---
+- name: Install common DevOps tools
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+        state: present
+      register: apt_result
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: apt_result.changed
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+      when: apt_result.changed
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+      when: apt_result.changed
+
+    - name: Add current user to Docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      when: apt_result.changed
+
+    - name: Install Ansible
+      apt:
+        name: ansible
+        state: present
+
+    - name: Install Kubernetes command-line tool
+      apt:
+        name: kubectl
+        state: present
+
+    - name: Install Helm
+      apt:
+        name:
+          - wget
+          - curl
+        state: present
+
+    - name: Download Helm installation script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+        dest: /tmp/get-helm-3.sh
+
+    - name: Make Helm installation script executable
+      file:
+        path: /tmp/get-helm-3.sh
+        mode: "u+x"
+
+    - name: Install Helm
+      command: /tmp/get-helm-3.sh
+
+    - name: Install AWS CLI
+      apt:
+        name: awscli
+        state: present
+
+    - name: Install Azure CLI
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - apt-transport-https
+          - lsb-release
+          - gnupg
+          - gcc
+        state: present
+
+    - name: Add Azure CLI GPG key
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+
+    - name: Add Azure CLI repository
+      apt_repository:
+        repo: deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main
+        state: present
+
+    - name: Install Azure CLI
+      apt:
+        name: azure-cli
+        state: present

@@ -1,0 +1,11 @@
+# Terraform files
+.terraform
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Ignore any file ending in ".tfplan"
+*.tfplan
+
+# Ignore any file with a tilde as a backup
+*~
