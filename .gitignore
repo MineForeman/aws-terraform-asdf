@@ -9,3 +9,6 @@ terraform.tfstate.backup
 
 # Ignore any file with a tilde as a backup
 *~
+
+# Ignore .DS_Store made by Mac OS
+.DS_Store

@@ -5,15 +5,36 @@
   vars:
     ansible_connection: ssh
     ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-    ansible_user: ubuntu
+    ansible_user: ec2-user
     ansible_ssh_private_key_file: ~/.ssh/id_rsa # Modify this to point to your SSH key file
     nrf_ssh_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}" # Modify this to point to your own SSH public key file
 
   tasks:
     - name: Wait for SSH to become available
       wait_for_connection:
-        delay: 5
+        # delay: 5
         timeout: 60
+
+    - name: Update the server
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+
+    - name: Transfer PSQL rpm
+      copy:
+        src: install/PSQL-13.31-026.000.x86_64.rpm
+        dest: /tmp/PSQL-13.31-026.000.x86_64.rpm
+
+    - name: Install PSQL package
+      yum:
+        name: /tmp/PSQL-13.31-026.000.x86_64.rpm
+        state: present
+
+    - name: Create sudo group
+      group:
+        name: sudo
+        state: present
 
     - name: Create nrf user
       user:
@@ -23,7 +44,6 @@
         shell: /bin/bash
 
     - name: Add nrf to sudo group
-      become: true
       user:
         name: nrf
         groups: sudo
@@ -41,6 +61,11 @@
         validate: "visudo -cf %s"
         state: present
         backup: yes
+
+    - name: Transfer playbook
+      copy:
+        src: playbook.yml
+        dest: /tmp/playbook.yml
 
     - name: Restart SSH service
       service:
