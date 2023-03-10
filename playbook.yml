@@ -1,4 +1,4 @@
-- name: Update Ubuntu System
+- name: Add nrf user and grant sudo access
   hosts: all
   become: true
   gather_facts: false
@@ -7,18 +7,50 @@
     ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
     ansible_user: ubuntu
     ansible_ssh_private_key_file: ~/.ssh/id_rsa # Modify this to point to your SSH key file
+    nrf_ssh_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}" # Modify this to point to your own SSH public key file
 
   tasks:
     - name: Wait for SSH to become available
       wait_for_connection:
         delay: 5
-        timeout: 500
+        timeout: 60
 
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    - name: Create nrf user
+      user:
+        name: nrf
+        state: present
+        create_home: true
 
-    - name: Perform system upgrade
-      apt:
-        upgrade: dist
-        update_cache: yes
+    - name: Add nrf to sudo group
+      become: true
+      user:
+        name: nrf
+        groups: sudo
+        append: yes
+
+    - name: Add SSH key to nrf authorized hosts
+      authorized_key:
+        user: nrf
+        key: "{{ nrf_ssh_key }}"
+
+    - name: Configure sudoers file to allow nrf to run sudo commands without a password prompt
+      lineinfile:
+        dest: /etc/sudoers
+        line: "nrf ALL=(ALL) NOPASSWD:ALL"
+        validate: "visudo -cf %s"
+        state: present
+        backup: yes
+
+    - name: Update SSH configuration to disallow password authentication
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+        sudo: true
+        validate: "sshd -t -f %s"
+
+    - name: Restart SSH service
+      service:
+        name: sshd
+        state: restarted
