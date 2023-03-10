@@ -12,3 +12,6 @@ terraform.tfstate.backup
 
 # Ignore .DS_Store made by Mac OS
 .DS_Store
+
+# Ignore install files
+install/
