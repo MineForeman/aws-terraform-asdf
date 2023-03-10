@@ -74,12 +74,14 @@ resource "aws_instance" "devops-instance" {
   subnet_id     = module.vpc.public_subnets[0]
   security_groups = [aws_security_group.ssh_access.id]
   key_name      = aws_key_pair.my_key_pair.key_name
-
-  # Assign a public IP address directly to the instance
   associate_public_ip_address = true
 
   tags = {
     Name        = "DevOps-Instance"
     Environment = "dev"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i '${aws_instance.devops-instance.public_ip},' playbook.yml --private-key ~/.ssh/id_rsa --user ubuntu"
   }
 }
