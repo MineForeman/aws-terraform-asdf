@@ -50,15 +50,15 @@ resource "aws_security_group" "ssh_access" {
 }
 
 # Create a security group to allow internet egress from the EC2 instance
-resource "aws_security_group_rule" "egress_internet" {
-  security_group_id = aws_security_group.ssh_access.id
+#resource "aws_security_group_rule" "egress_internet" {
+#  security_group_id = aws_security_group.ssh_access.id
 
-  type        = "egress"
-  from_port   = 0
-  to_port     = 0
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-}
+#  type        = "egress"
+#  from_port   = 0
+#  to_port     = 0
+#  protocol    = "tcp"
+#  cidr_blocks = ["0.0.0.0/0"]
+#}
 
 # Add a key pair to the EC2 instance
 resource "aws_key_pair" "my_key_pair" {

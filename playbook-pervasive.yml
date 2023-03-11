@@ -62,11 +62,6 @@
         state: present
         backup: yes
 
-    - name: Transfer playbook
-      copy:
-        src: playbook.yml
-        dest: /tmp/playbook.yml
-
     - name: Restart SSH service
       service:
         name: sshd
