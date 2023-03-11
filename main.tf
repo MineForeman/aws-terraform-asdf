@@ -24,6 +24,29 @@ module "vpc" {
   }
 }
 
+# Create an AWS Managed Microsoft AD directory that is available in all subnets
+resource "aws_directory_service_directory" "my_directory" {
+  description = "ASDF Managed Microsoft AD Directory"
+  name           = "asdf.co.nz"
+  password       = "X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$" # Replace with a strong password
+  edition        = "Standard"
+  type           = "MicrosoftAD" # Set the type to MicrosoftAD
+  enable_sso     = false
+  vpc_settings {
+    vpc_id       = module.vpc.vpc_id
+    subnet_ids   = [
+      module.vpc.public_subnets[0],
+      module.vpc.public_subnets[1],
+    ]
+  }
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
+
+
 # Create a security group to allow SSH access to the EC2 instance
 resource "aws_security_group" "ssh_access" {
   name_prefix = "ssh-access"
@@ -49,16 +72,47 @@ resource "aws_security_group" "ssh_access" {
   }
 }
 
-# Create a security group to allow internet egress from the EC2 instance
-#resource "aws_security_group_rule" "egress_internet" {
-#  security_group_id = aws_security_group.ssh_access.id
+resource "aws_security_group" "rdp_access" {
+  name_prefix = "rdp-access"
+  vpc_id      = module.vpc.vpc_id
 
-#  type        = "egress"
-#  from_port   = 0
-#  to_port     = 0
-#  protocol    = "tcp"
-#  cidr_blocks = ["0.0.0.0/0"]
-#}
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "RDP-Access"
+    Environment = "dev"
+  }
+}
+
+resource "aws_security_group" "winrm_access" {
+  name_prefix = "winrm-access"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 5985
+    to_port     = 5986
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "WinRM-Access"
+    Environment = "dev"
+  }
+}
+
 
 # Add a key pair to the EC2 instance
 resource "aws_key_pair" "my_key_pair" {
@@ -98,23 +152,55 @@ resource "aws_instance" "pervasive-instance" {
     Environment = "dev"
   }
 
-  #provisioner "file" {
-  #  source = "install/PSQL-13.31-026.000.x86_64.rpm"
-  #  destination = "/tmp/PSQL-13.31-026.000.x86_64.rpm"
-
-  #  connection {
-  #    type     = "ssh"
-  #    user     = "ubuntu"
-  #    private_key = file("~/.ssh/id_rsa")
-  #    host     = self.public_ip
-  #  }
-  #}
 
   provisioner "local-exec" {
     command = "ansible-playbook -i '${aws_instance.pervasive-instance.public_ip},' playbook-pervasive.yml --private-key ~/.ssh/id_rsa --user ec2-user"
   }
 }
 
+resource "aws_instance" "windows-instance" {
+  ami                         = "ami-00e424fe8ed95e894" # Microsoft Windows Server 2019 with Desktop Experience Locale English AMI provided by Amazon
+  instance_type               = "t3a.medium"
+  subnet_id                   = module.vpc.public_subnets[0]
+  vpc_security_group_ids      = [aws_security_group.rdp_access.id, aws_security_group.winrm_access.id]
+  key_name                    = aws_key_pair.my_key_pair.key_name
+  associate_public_ip_address = true
+
+  user_data = <<-EOF
+    <powershell>
+      # Install the WinRM service
+      $ErrorActionPreference = 'Stop'
+      $ProgressPreference = 'SilentlyContinue'
+      $VerbosePreference = 'SilentlyContinue'
+      $DebugPreference = 'SilentlyContinue'
+      $WarningPreference = 'SilentlyContinue'
+      $Verbose = $false
+
+      if (-not (Get-Service -Name WinRM -ErrorAction SilentlyContinue)) {
+        if (-not (Get-Service -Name Wecsvc -ErrorAction SilentlyContinue)) {
+          Start-Service -Name Wecsvc -WarningAction SilentlyContinue
+        }
+        if (-not (Get-Service -Name WinRM -ErrorAction SilentlyContinue)) {
+          Set-Service -Name WinRM -StartupType Automatic -ErrorAction SilentlyContinue
+          Start-Service -Name WinRM -WarningAction SilentlyContinue
+        }
+      }
+
+      # Configure the instance to allow remote connections from Ansible
+      Enable-PSRemoting -SkipNetworkProfileCheck -Force
+      Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any -Verbose
+      Set-Item WSMan:\localhost\Service\Auth\Basic -Value $true -Force
+      Restart-Service WinRM
+    </powershell>
+  EOF
+
+  tags = {
+    Name        = "Windows-Instance"
+    Environment = "dev"
+  }
+}
+
+# DNS Route 53 settings
 resource "aws_route53_record" "a_nrf_asdf_co_nz" {
   zone_id = "Z02645693VHQRFVDHHYY4"
   name    = "nrf.asdf.co.nz"
@@ -129,4 +215,12 @@ resource "aws_route53_record" "a_psql_asdf_co_nz" {
   type    = "A"
   ttl     = "300"
   records = [aws_instance.pervasive-instance.public_ip]
+}
+
+resource "aws_route53_record" "a_win_asdf_co_nz" {
+  zone_id = "Z02645693VHQRFVDHHYY4"
+  name    = "win.asdf.co.nz"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.windows-instance.public_ip]
 }
