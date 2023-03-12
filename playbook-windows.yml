@@ -1,0 +1,32 @@
+- name: Update Windows Server via WinRM
+  hosts: all
+  gather_facts: no
+  vars:
+    ansible_user: Administrator
+    ansible_password: SuperS3cr3t!!!!
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
+  tasks:
+    - name: Install Windows updates
+      win_updates:
+        category_names: SecurityUpdates, CriticalUpdates
+        reboot: yes
+        reboot_timeout: 600
+      register: win_update_result
+
+    - name: Reboot if updates were installed
+      win_reboot:
+      when: win_update_result.reboot_required
+
+    - name: Wait for server to come back up
+      wait_for_connection:
+        timeout: 300
+
+    - name: Verify updates were installed
+      win_updates:
+        category_names: SecurityUpdates, CriticalUpdates
+      register: win_verify_result
+      until: win_verify_result.updates_installed | length > 0
+      retries: 10
+      delay: 30

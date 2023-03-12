@@ -27,14 +27,14 @@ module "vpc" {
 # Create an AWS Managed Microsoft AD directory that is available in all subnets
 resource "aws_directory_service_directory" "my_directory" {
   description = "ASDF Managed Microsoft AD Directory"
-  name           = "asdf.co.nz"
-  password       = "X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$" # Replace with a strong password
-  edition        = "Standard"
-  type           = "MicrosoftAD" # Set the type to MicrosoftAD
-  enable_sso     = false
+  name        = "asdf.co.nz"
+  password    = "X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$" # Replace with a strong password
+  edition     = "Standard"
+  type        = "MicrosoftAD" # Set the type to MicrosoftAD
+  enable_sso  = false
   vpc_settings {
-    vpc_id       = module.vpc.vpc_id
-    subnet_ids   = [
+    vpc_id = module.vpc.vpc_id
+    subnet_ids = [
       module.vpc.public_subnets[0],
       module.vpc.public_subnets[1],
     ]
@@ -159,7 +159,8 @@ resource "aws_instance" "pervasive-instance" {
 }
 
 resource "aws_instance" "windows-instance" {
-  ami                         = "ami-00e424fe8ed95e894" # Microsoft Windows Server 2019 with Desktop Experience Locale English AMI provided by Amazon
+  ami = "ami-0743f8456eff9b155" # Packer Windows Server 2012R2 Base Image
+  # Microsoft Windows Server 2019 with Desktop Experience Locale English AMI provided by Amazon
   instance_type               = "t3a.medium"
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.rdp_access.id, aws_security_group.winrm_access.id]
@@ -168,29 +169,10 @@ resource "aws_instance" "windows-instance" {
 
   user_data = <<-EOF
     <powershell>
-      # Install the WinRM service
-      $ErrorActionPreference = 'Stop'
-      $ProgressPreference = 'SilentlyContinue'
-      $VerbosePreference = 'SilentlyContinue'
-      $DebugPreference = 'SilentlyContinue'
-      $WarningPreference = 'SilentlyContinue'
-      $Verbose = $false
-
-      if (-not (Get-Service -Name WinRM -ErrorAction SilentlyContinue)) {
-        if (-not (Get-Service -Name Wecsvc -ErrorAction SilentlyContinue)) {
-          Start-Service -Name Wecsvc -WarningAction SilentlyContinue
-        }
-        if (-not (Get-Service -Name WinRM -ErrorAction SilentlyContinue)) {
-          Set-Service -Name WinRM -StartupType Automatic -ErrorAction SilentlyContinue
-          Start-Service -Name WinRM -WarningAction SilentlyContinue
-        }
-      }
-
-      # Configure the instance to allow remote connections from Ansible
-      Enable-PSRemoting -SkipNetworkProfileCheck -Force
-      Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any -Verbose
-      Set-Item WSMan:\localhost\Service\Auth\Basic -Value $true -Force
-      Restart-Service WinRM
+      $uri = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+      $output = "$env:TEMP\ConfigureRemotingForAnsible.ps1"
+      (New-Object System.Net.WebClient).DownloadFile($uri, $output)
+      powershell.exe -ExecutionPolicy ByPass -File $output
     </powershell>
   EOF
 
@@ -198,6 +180,14 @@ resource "aws_instance" "windows-instance" {
     Name        = "Windows-Instance"
     Environment = "dev"
   }
+
+  provisioner "local-exec" {
+  command = "ansible-playbook -i '${aws_instance.windows-instance.public_ip},' playbook-windows.yml"
+  environment = {
+    ANSIBLE_HOST_KEY_CHECKING = "False"
+  }
+}
+
 }
 
 # DNS Route 53 settings
