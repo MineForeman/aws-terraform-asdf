@@ -1,6 +1,6 @@
 # Define the AWS provider and region
 provider "aws" {
-  region = "us-east-2"
+  region = "us-east-1"
 }
 
 # Create a VPC with 3 public and 3 private subnets
@@ -9,7 +9,7 @@ module "vpc" {
 
   name            = "neil-devops-vpc"
   cidr            = "10.0.0.0/16"
-  azs             = ["us-east-2a", "us-east-2b", "us-east-2c"]
+  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
   # Allow auto-assign public IP on launch
@@ -122,7 +122,7 @@ resource "aws_key_pair" "my_key_pair" {
 
 # Create an EC2 instance
 resource "aws_instance" "devops-instance" {
-  ami                         = "ami-06b73ea6a1aa71f61"
+  ami                         = "ami-011d76c658e2f3885"
   instance_type               = "t3a.micro"
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.ssh_access.id]
@@ -140,7 +140,7 @@ resource "aws_instance" "devops-instance" {
 }
 
 resource "aws_instance" "pervasive-instance" {
-  ami                         = "ami-02238ac43d6385ab3"
+  ami                         = "ami-005f9685cb30f234b"
   instance_type               = "t3a.micro"
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.ssh_access.id]
@@ -159,8 +159,8 @@ resource "aws_instance" "pervasive-instance" {
 }
 
 resource "aws_instance" "windows-instance" {
-  ami = "ami-0f889a2da28d99c07" # Packer Windows Server 2012R2 Base Image
-  # Microsoft Windows Server 2019 with Desktop Experience Locale English AMI provided by Amazon
+  ami = "ami-006eb93c66a20b8fd" #
+
   instance_type               = "t3a.medium"
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.rdp_access.id, aws_security_group.winrm_access.id]
@@ -172,12 +172,11 @@ resource "aws_instance" "windows-instance" {
     Environment = "dev"
   }
   provisioner "local-exec" {
-  command = "ansible-playbook -i '${aws_instance.windows-instance.public_ip},' playbook-windows.yml"
-  environment = {
-    ANSIBLE_HOST_KEY_CHECKING = "False"
+    command = "ansible-playbook -i '${aws_instance.windows-instance.public_ip},' playbook-windows.yml"
+    environment = {
+      ANSIBLE_HOST_KEY_CHECKING = "False"
+    }
   }
-}
-
 }
 
 # DNS Route 53 settings

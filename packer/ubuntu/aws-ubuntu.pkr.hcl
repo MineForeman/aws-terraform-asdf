@@ -10,7 +10,7 @@ packer {
 source "amazon-ebs" "ubuntu" {
   ami_name      = "packer-ubunut-devops-{{timestamp}}"
   instance_type = "t3a.micro"
-  region        = "us-east-2"
+  region        = "us-east-1"
 
   source_ami_filter {
     filters = {

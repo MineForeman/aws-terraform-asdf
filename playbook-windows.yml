@@ -22,11 +22,3 @@
     - name: Wait for server to come back up
       wait_for_connection:
         timeout: 300
-
-    - name: Verify updates were installed
-      win_updates:
-        category_names: SecurityUpdates, CriticalUpdates
-      register: win_verify_result
-      until: win_verify_result.updates_installed | length > 0
-      retries: 10
-      delay: 30
