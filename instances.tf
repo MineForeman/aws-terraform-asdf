@@ -46,10 +46,15 @@ resource "aws_instance" "windows-instance" {
   key_name                    = aws_key_pair.my_key_pair.key_name
   associate_public_ip_address = true
 
+  provisioner "local-exec" {
+    command = "aws ssm send-command --instance-ids ${self.id} --document-name AWS-RunPowerShellScript --parameters 'commands=[\"Add-Computer -DomainName ${var.managed_ad_name} -Credential (Get-Credential) -Restart\"]' --output text --query 'Command.CommandId'"
+  }
+
   tags = {
     Name        = "Windows-Instance"
     Environment = "dev"
   }
+
 
   provisioner "local-exec" {
     command = "ansible-playbook -i '${aws_instance.windows-instance.public_ip},' playbook-windows.yml"
