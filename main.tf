@@ -28,35 +28,6 @@ module "vpc" {
 }
 
 
-
-# Create an IAM role for SSM to join the instance to the domain
-resource "aws_iam_role" "ssm_role" {
-  name = "ssm-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ssm_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
-  role       = aws_iam_role.ssm_role.name
-}
-
-# Create an instance profile for SSM to join the instance to the domain
-resource "aws_iam_instance_profile" "ssm_profile" {
-  name = "ssm-instance-profile"
-  role = aws_iam_role.ssm_role.name
-}
-
 # Create an AWS Managed Microsoft AD directory that is available in all subnets
 resource "aws_directory_service_directory" "my_directory" {
   description = "ASDF Managed Microsoft AD Directory"
@@ -83,7 +54,28 @@ resource "aws_directory_service_directory" "my_directory" {
 }
 
 
+resource "aws_vpc_dhcp_options" "dns_resolver" {
 
+  domain_name_servers = aws_directory_service_directory.my_directory.dns_ip_addresses
+  domain_name = "asdf.co.nz"
+
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
+
+
+
+resource "aws_vpc_dhcp_options_association" "dns_resolver" {
+
+  vpc_id = module.vpc.vpc_id
+
+
+  dhcp_options_id = aws_vpc_dhcp_options.dns_resolver.id
+
+}
 
 
 # Add a key pair to the EC2 instances

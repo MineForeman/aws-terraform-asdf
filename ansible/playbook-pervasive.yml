@@ -23,7 +23,7 @@
 
     - name: Transfer PSQL rpm
       copy:
-        src: install/PSQL-13.31-026.000.x86_64.rpm
+        src: ../install/PSQL-13.31-026.000.x86_64.rpm
         dest: /tmp/PSQL-13.31-026.000.x86_64.rpm
 
     - name: Install PSQL package

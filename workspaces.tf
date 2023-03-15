@@ -6,12 +6,15 @@ resource "aws_workspaces_directory" "my_workspace_directory" {
 
 # Create a performance Windows Workspace
 resource "aws_workspaces_workspace" "my_workspace" {
+
+  count = 0
+
   bundle_id    = "wsb-b9jc2fhhl"
   directory_id = aws_directory_service_directory.my_directory.id
   user_name    = "nrf"
 
   workspace_properties {
-    compute_type_name                         = "VALUE"
+    compute_type_name                         = "PERFORMANCE"
     user_volume_size_gib                      = 10
     root_volume_size_gib                      = 80
     running_mode                              = "AUTO_STOP"
@@ -22,4 +25,5 @@ resource "aws_workspaces_workspace" "my_workspace" {
     Terraform   = "true"
     Environment = "dev"
   }
+
 }

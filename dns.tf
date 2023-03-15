@@ -1,3 +1,5 @@
+
+/*
 # Create DNS records for the instances
 resource "aws_route53_record" "a_nrf_asdf_co_nz" {
   zone_id = var.route53_zone_id
@@ -14,6 +16,7 @@ resource "aws_route53_record" "a_psql_asdf_co_nz" {
   ttl     = "300"
   records = [aws_instance.pervasive-instance.public_ip]
 }
+*/
 
 resource "aws_route53_record" "a_win_asdf_co_nz" {
   zone_id = var.route53_zone_id
