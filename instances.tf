@@ -61,5 +61,7 @@ resource "aws_instance" "windows-instance" {
       ANSIBLE_HOST_KEY_CHECKING = "False"
     }
   }
+
+  depends_on = [aws_directory_service_directory.my_directory]
 }
 

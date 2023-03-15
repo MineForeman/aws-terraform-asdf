@@ -55,3 +55,28 @@ resource "aws_security_group" "windows_access" {
     Environment = "dev"
   }
 }
+
+# Create a security group to allow RDP and WinRM access to the Windows instance
+resource "aws_security_group" "workspaces_access" {
+  name_prefix = "windows-access"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "Workspaces-Access"
+    Environment = "dev"
+  }
+}

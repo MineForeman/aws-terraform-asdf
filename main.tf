@@ -57,7 +57,7 @@ resource "aws_directory_service_directory" "my_directory" {
 resource "aws_vpc_dhcp_options" "dns_resolver" {
 
   domain_name_servers = aws_directory_service_directory.my_directory.dns_ip_addresses
-  domain_name = "asdf.co.nz"
+  domain_name         = "asdf.co.nz"
 
   tags = {
     Terraform   = "true"

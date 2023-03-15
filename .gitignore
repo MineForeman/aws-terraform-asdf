@@ -16,3 +16,6 @@ terraform.tfstate.backup
 
 # Ignore install files
 install/
+graph.svg
+plan.json
+plan.out
