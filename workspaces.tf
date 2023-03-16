@@ -13,7 +13,7 @@ resource "aws_workspaces_directory" "my_workspace_directory" {
   }
 
   workspace_creation_properties {
-    custom_security_group_id            = aws_security_group.workspaces_access.id # Here is the problem
+    custom_security_group_id            = aws_security_group.workspaces_access.id
     enable_internet_access              = true
     enable_maintenance_mode             = true
     user_enabled_as_local_administrator = false
@@ -23,11 +23,11 @@ resource "aws_workspaces_directory" "my_workspace_directory" {
 # Create a performance Windows Workspace
 resource "aws_workspaces_workspace" "my_workspace" {
 
-  count = 0
+  count = 1
 
   bundle_id    = "wsb-b9jc2fhhl"
   directory_id = aws_directory_service_directory.my_directory.id
-  user_name    = "nrf"
+  user_name    = "Admin"
 
   workspace_properties {
     compute_type_name                         = "PERFORMANCE"

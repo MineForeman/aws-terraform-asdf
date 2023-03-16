@@ -11,16 +11,7 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
-    #- name: Add local administrator
-    #- name: Install Chocolatey
-    #  win_chocolatey:
-    #      name: chocolatey
-    #      state: present
     - name: Install development packages with Chocolatey
       win_chocolatey:
         name:
           - git
-          #- visualstudiocode
-          #- python
-          #- nodejs
-          #- dotnetcore-sdk

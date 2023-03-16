@@ -43,6 +43,13 @@ resource "aws_security_group" "windows_access" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port       = 445
+    to_port         = 445
+    protocol        = "tcp"
+    security_groups = [aws_security_group.workspaces_access.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

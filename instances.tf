@@ -39,8 +39,8 @@ resource "aws_instance" "pervasive-instance" {
     command = "ansible-playbook -i '${aws_instance.pervasive-instance.public_ip},' ansible/playbook-pervasive.yml --private-key ~/.ssh/id_rsa --user ec2-user"
   }
 }
+
 */
-#Create an EC2 instance for the Windows workload
 resource "aws_instance" "windows-instance" {
   ami                         = var.instance_ami_windows
   instance_type               = var.instance_type_windows
@@ -54,7 +54,6 @@ resource "aws_instance" "windows-instance" {
     Environment = "dev"
   }
 
-
   provisioner "local-exec" {
     command = "ansible-playbook -i '${aws_instance.windows-instance.public_ip},' ansible/win-0*.yml"
     environment = {
@@ -62,6 +61,27 @@ resource "aws_instance" "windows-instance" {
     }
   }
 
-  depends_on = [aws_directory_service_directory.my_directory]
+  depends_on = [aws_directory_service_directory.my_directory,aws_ebs_volume.d_drive]
 }
 
+resource "aws_ebs_volume" "d_drive" {
+  availability_zone = data.aws_subnet.selected.availability_zone
+  size              = 10 # Size in GiB for D drive
+  type              = "gp3"
+
+  tags = {
+    Name        = "D-Drive"
+    Environment = "dev"
+  }
+}
+
+data "aws_subnet" "selected" {
+  id = module.vpc.public_subnets[0]
+}
+
+
+resource "aws_volume_attachment" "d_drive_attachment" {
+  device_name   = "/dev/xvdd"
+  volume_id     = aws_ebs_volume.d_drive.id
+  instance_id   = aws_instance.windows-instance.id
+}

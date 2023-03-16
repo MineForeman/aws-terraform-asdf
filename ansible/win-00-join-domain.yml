@@ -11,14 +11,39 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
+    - name: Install Windows Features
+      ansible.windows.win_feature:
+        name:
+          - GPMC
+          - RSAT-AD-PowerShell
+          - RSAT-AD-AdminCenter
+          - RSAT-ADDS-Tools
+          - RSAT-DNS-Server
+        state: present
+      ignore_errors: yes
+
+    - name: Remove existing computer object from Active Directory
+      ansible.windows.win_shell: |
+        $ErrorActionPreference = 'Stop'
+        Import-Module ActiveDirectory
+        $computerName = 'win'
+        if (Get-ADComputer -Filter {Name -eq $computerName} -ErrorAction SilentlyContinue) {
+          Remove-ADComputer -Identity $computerName -Confirm:$false
+        }
+      vars:
+        ansible_become: yes
+        ansible_become_method: runas
+        ansible_become_user: admin@asdf.co.nz
+        ansible_become_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
+      ignore_errors: yes
     - name: Join server to asdf.co.nz domain
       ansible.windows.win_domain_membership:
         dns_domain_name: asdf.co.nz
-        #hostname: "win"
         domain_admin_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
         domain_admin_user: admin@asdf.co.nz
         ou_path: "OU=Servers,DC=asdf,DC=co,DC=nz"
         state: domain
+        overwrite: true
     - name: Reboot the instance
       win_reboot:
         reboot_timeout: 600

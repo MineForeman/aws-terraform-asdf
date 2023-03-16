@@ -14,17 +14,14 @@ variable "region" {
 
 locals { timestamp = regex_replace(timestamp(), "[- TZ:]", "") }
 
-# source blocks are generated from your builders; a source can be referenced in
-# build blocks. A build block runs provisioner and post-processors on a
-# source.
 source "amazon-ebs" "firstrun-windows" {
-  ami_name      = "packer-windows-2012-R2-${local.timestamp}"
+  ami_name      = "packer-windows-2022-${local.timestamp}"
   communicator  = "winrm"
   instance_type = "t2.micro"
   region        = "${var.region}"
   source_ami_filter {
     filters = {
-      name                = "Windows_Server-2012-R2*English-64Bit-Base*"
+      name                = "Windows_Server-2022-English-Full-Base*"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -36,11 +33,10 @@ source "amazon-ebs" "firstrun-windows" {
   winrm_username = "Administrator"
 
   tags = {
-    Name = "Packer Windows 2012 R2 AMI"
+    Name = "Packer Windows 2022 AMI"
   }
 }
 
-# a build block invokes sources and runs provisioning steps on them.
 build {
   name    = "learn-packer"
   sources = ["source.amazon-ebs.firstrun-windows"]
@@ -64,4 +60,3 @@ build {
     script           = "./setup_winrm.ps1"
   }
 }
-
