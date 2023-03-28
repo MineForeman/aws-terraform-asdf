@@ -1,9 +1,9 @@
-- name: Update Windows Server via WinRM
+- name: Add local and domain users via WinRM
   hosts: all
   gather_facts: no
   vars:
-    ansible_user: Administrator
-    ansible_password: SuperS3cr3t!!!!
+    ansible_user: ASDF\admin
+    ansible_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
     ansible_connection: winrm
     ansible_winrm_transport: ntlm
     ansible_winrm_server_cert_validation: ignore
@@ -17,3 +17,11 @@
         password: v_T3W3isnQuqv
         state: present
         groups: Administrators
+    - name: Ensure user bob is present in OU ou=test,dc=domain,dc=local
+      community.windows.win_domain_user:
+        name: bob
+        password: B0bP4ssw0rd
+        state: present
+        domain_server: asdf.co.nz
+        groups:
+          - Domain Admins

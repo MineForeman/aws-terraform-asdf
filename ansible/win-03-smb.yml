@@ -2,37 +2,60 @@
   hosts: all
   gather_facts: no
   vars:
-    ansible_user: Administrator
-    ansible_password: SuperS3cr3t!!!!
+    ansible_user: ASDF\admin
+    ansible_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
     ansible_connection: winrm
     ansible_winrm_transport: ntlm
     ansible_winrm_server_cert_validation: ignore
+    aws_profile: default
   tasks:
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
-    - name: Check for Device and Attach Disk
-      win_shell: |
-        $device = "D:"
-        $disk = Get-Disk | Where-Object { $_.IsOffline -eq $false -and $_.IsReadOnly -eq $false -and $_.PartitionStyle -eq "RAW" }
-        if (!$disk) {
-            $disk = New-Disk -Number (Get-Disk | Measure-Object -Maximum Number).Maximum + 1 -PartitionStyle GPT
-            $partition = $disk | New-Partition -AssignDriveLetter -UseMaximumSize
-            $partition | Format-Volume -FileSystem NTFS -NewFileSystemLabel "Data" -Confirm:$false
-        }
-        $volume = Get-Volume -DriveLetter $device -ErrorAction SilentlyContinue
-        if (!$volume) {
-            $partition = Get-Partition -DiskNumber $disk.Number
-            $volume = $partition | Format-Volume -FileSystem NTFS -NewFileSystemLabel "Data" -Confirm:$false
-            if (!$volume) {
-                throw "Failed to format and mount the disk"
-            }
-            $drive = New-Object System.Management.Automation.PSDrive($device, $volume.FileSystemLabel, "FileSystem", $partition.UniqueId)
-            if (!$drive) {
-                throw "Failed to assign a drive letter to the disk"
-            }
-        }
-      args:
-        executable: powershell.exe
-      become: true
-      become_user: Administrator
+    - name: Rejoin the instance to the domain
+      ansible.windows.win_domain_membership:
+        hostname: bob
+        domain_admin_user: "{{ ansible_user }}"
+        domain_admin_password: "{{ ansible_password }}"
+        domain_server: "asdf.co.nz"
+        domain_name: "asdf.co.nz"
+        dns_domain_name: "asdf.co.nz"
+        state: domain
+        restart: yes
+      register: domain_join_result
+      ignore_errors: yes
+
+    - name: Display the result of domain rejoin
+      ansible.builtin.debug:
+        var: domain_join_result
+
+
+    - name: Install File Services role
+      win_feature:
+        name: FS-FileServer
+        state: present
+
+    - name: Create shared folder
+      win_file:
+        path: C:\SharedFolder
+        state: directory
+
+    - name: Set shared folder permissions
+      ansible.windows.win_acl:
+        path: C:\SharedFolder
+        user: "{{ item.user }}"
+        rights: "{{ item.rights }}"
+        type: allow
+        state: present
+      loop:
+        - { user: 'Administrator', rights: 'FullControl' }
+        - { user: 'SYSTEM', rights: 'FullControl' }
+        - { user: 'Users', rights: 'Modify' }
+
+    - name: Share the folder
+      ansible.windows.win_share:
+        name: SharedFolder
+        path: C:\SharedFolder
+        list: yes
+        full: 'Everyone'
+        description: 'Shared Folder'

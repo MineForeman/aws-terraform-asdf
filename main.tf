@@ -1,6 +1,7 @@
 # Define the AWS provider and region
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-southeast-2"
+  profile = "integral"
 }
 
 # Create a VPC with 3 public and 3 private subnets

@@ -18,6 +18,8 @@ resource "aws_workspaces_directory" "my_workspace_directory" {
     enable_maintenance_mode             = true
     user_enabled_as_local_administrator = false
   }
+
+  depends_on = [aws_directory_service_directory.my_directory, aws_instance.windows-instance]
 }
 
 # Create a performance Windows Workspace

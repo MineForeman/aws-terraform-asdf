@@ -11,7 +11,18 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
+    - name: Install Windows Features
+      ansible.windows.win_feature:
+        name:
+          - GPMC
+          - RSAT-AD-PowerShell
+          - RSAT-AD-AdminCenter
+          - RSAT-ADDS-Tools
+          - RSAT-DNS-Server
+        state: present
+      ignore_errors: yes
     - name: Install development packages with Chocolatey
       win_chocolatey:
         name:
           - git
+          - notepadplusplus
