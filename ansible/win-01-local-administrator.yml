@@ -2,8 +2,8 @@
   hosts: all
   gather_facts: no
   vars:
-    ansible_user: ASDF\admin
-    ansible_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
+    ansible_user: Administrator
+    ansible_password: SuperS3cr3t!!!!
     ansible_connection: winrm
     ansible_winrm_transport: ntlm
     ansible_winrm_server_cert_validation: ignore
@@ -11,17 +11,26 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
-    - name: Add local administrator
-      win_user:
-        name: Utmost1428
-        password: v_T3W3isnQuqv
-        state: present
+    - name: Add local users
+      ansible.windows.win_user:
+        name: "{{ item }}"
+        password: "{{ item_password }}"
         groups: Administrators
-    - name: Ensure user bob is present in OU ou=test,dc=domain,dc=local
-      community.windows.win_domain_user:
-        name: bob
-        password: B0bP4ssw0rd
         state: present
-        domain_server: asdf.co.nz
-        groups:
-          - Domain Admins
+      with_items:
+        - Chris
+        - Neil
+        - Vivek
+        - Anthony
+      vars:
+        item_password: oY^MekHKnZ%cr9
+
+    - name: Add domain users to local administrators group
+      ansible.windows.win_group_membership:
+        name: Administrators
+        members:
+          - provident.local\Chris
+          - provident.local\Neil
+          - provident.local\Vivek
+          - provident.local\Anthony
+        state: present

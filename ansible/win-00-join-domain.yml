@@ -11,14 +11,11 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
-    - name: Join server to asdf.co.nz domain
+    - name: Join server to domain
       ansible.windows.win_domain_membership:
-        dns_domain_name: asdf.co.nz
-        domain_admin_password: X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$
-        domain_admin_user: admin@asdf.co.nz
-        ou_path: "OU=Servers,DC=asdf,DC=co,DC=nz"
+        dns_domain_name: provident.local
+        domain_admin_password: "X5959xfveS!8*fUY*NrF2Vcv^RxnM@GHq$"
+        domain_admin_user: admin
+        ou_path: "OU=Servers,DC=provident,DC=local"
         state: domain
         overwrite: true
-    - name: Reboot the instance
-      win_reboot:
-        reboot_timeout: 600

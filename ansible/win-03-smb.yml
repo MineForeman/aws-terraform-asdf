@@ -12,24 +12,6 @@
     - name: Wait for connection
       wait_for_connection:
         timeout: 300
-    - name: Rejoin the instance to the domain
-      ansible.windows.win_domain_membership:
-        hostname: bob
-        domain_admin_user: "{{ ansible_user }}"
-        domain_admin_password: "{{ ansible_password }}"
-        domain_server: "asdf.co.nz"
-        domain_name: "asdf.co.nz"
-        dns_domain_name: "asdf.co.nz"
-        state: domain
-        restart: yes
-      register: domain_join_result
-      ignore_errors: yes
-
-    - name: Display the result of domain rejoin
-      ansible.builtin.debug:
-        var: domain_join_result
-
-
     - name: Install File Services role
       win_feature:
         name: FS-FileServer
@@ -37,7 +19,7 @@
 
     - name: Create shared folder
       win_file:
-        path: C:\SharedFolder
+        path: D:\SharedFolder
         state: directory
 
     - name: Set shared folder permissions
@@ -55,7 +37,7 @@
     - name: Share the folder
       ansible.windows.win_share:
         name: SharedFolder
-        path: C:\SharedFolder
+        path: D:\SharedFolder
         list: yes
         full: 'Everyone'
         description: 'Shared Folder'

@@ -40,7 +40,7 @@ resource "aws_security_group" "windows_access" {
     from_port   = 5985
     to_port     = 5986
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["206.83.103.160/32"]
   }
 
   ingress {
